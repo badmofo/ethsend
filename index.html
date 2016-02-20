@@ -1,0 +1,68 @@
+<html lang="en" ng-app="eth">
+<head>
+<meta charset="utf-8">
+<title>Ethereum Raw Transaction Broadcaster</title>
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" />
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.9/angular.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.9/angular-route.min.js"></script>
+
+<script>
+
+var app = angular.module('eth', []);
+
+app.controller("PageCtrl", function($scope, $http, $log) {
+    
+    $scope.broadcast = function() {
+        var apiUrl = 'https://api.etherscan.io/api';
+        if ( !$scope.txhex ) {
+            $scope.response = {'data': {'error': {'message': 'Please provide a transaction.'}}};
+            return;
+        }
+        var params = {
+            'module': 'proxy',
+            'action': 'eth_sendRawTransaction',
+            'hex': ($scope.txhex || '').trim()
+        };
+        $scope.response = undefined;
+        $http({
+            method: 'GET',
+            url: apiUrl,
+            params: params
+        }).then(function successCallback(response) {
+            $log.log(response);
+            // this callback will be called asynchronously
+            // when the response is available
+            $scope.response = response;
+        }, function errorCallback(response) {
+            $log.log(response);
+            $scope.response = {'data': {'error': {'message': 'API server unavailable.'}}};
+        });
+    }
+});
+
+</script>
+
+<body ng-controller="PageCtrl">
+    <div class="container">
+        <h2>Ethereum Raw Transaction Broadcaster</h2>
+        
+        <p class="text-muted">This will attempt to broadcast a raw (hex-encoded) Ethereum transaction by using the API provided by <a href="https://etherscan.io/">Etherscan.io</a>.</p>
+        
+        <div class="form-group">
+            <textarea class="form-control" rows="5" ng-model="txhex" placeholder="Enter raw transaction here."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" ng-click="broadcast()">Broadcast Transaction</button>
+        
+        <br/>
+        <br/>
+        <div class="alert alert-danger" ng-show="response.data.error">
+            <strong>Error:</strong> {{ response.data.error.message }}
+        </div>
+        <div class="alert alert-success" ng-show="response.data.result">
+            <strong>Success:</strong> Transaction Id: {{ response.data.result }}  
+            <p>Expect confirmation shortly.</p>
+        </div>
+    </div>
+</html>
